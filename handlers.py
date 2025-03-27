@@ -2,7 +2,8 @@ from aiogram import types, F
 from aiogram.fsm.context import FSMContext
 from lexicon import LEXICON
 from states import GameStates
-from keyboards import start_menu_keyboard, my_settings_menu_keyboard, settings_menu_keyboard, main_menu_keyboard, game_menu_keyboard
+from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
+                       settings_menu_keyboard, main_menu_keyboard, game_menu_keyboard)
 
 
 async def send_welcome(message: types.Message):
@@ -15,10 +16,12 @@ async def process_help(message: types.Message):
 
 async def process_rules(callback_query: types.CallbackQuery):
     await callback_query.message.answer(LEXICON["rules"], reply_markup=main_menu_keyboard())
+    await callback_query.answer()
 
 
 async def process_settings(callback_query: types.CallbackQuery):
     await callback_query.message.answer(LEXICON["settings"], reply_markup=settings_menu_keyboard())
+    await callback_query.answer()
 
 
 async def process_my_settings(callback_query: types.CallbackQuery, state: FSMContext):
@@ -33,12 +36,14 @@ async def process_my_settings(callback_query: types.CallbackQuery, state: FSMCon
         time_limit=time_limit,
         attempts=attempts
     ), reply_markup=my_settings_menu_keyboard())
+    await callback_query.answer()
 
 
 async def process_set_range(callback_query: types.CallbackQuery, state: FSMContext):
     # Устанавливаем состояние set_range
     await state.set_state(GameStates.set_range)
     await callback_query.message.answer(LEXICON["set_range_prompt"], reply_markup=settings_menu_keyboard())
+    await callback_query.answer()
 
 
 async def set_range(message: types.Message, state: FSMContext):
@@ -57,6 +62,7 @@ async def process_set_time(callback_query: types.CallbackQuery, state: FSMContex
     # Устанавливаем состояние set_time
     await state.set_state(GameStates.set_time)
     await callback_query.message.answer(LEXICON["set_time_prompt"], reply_markup=settings_menu_keyboard())
+    await callback_query.answer()
 
 
 async def set_time(message: types.Message, state: FSMContext):
@@ -75,6 +81,7 @@ async def process_set_attempts(callback_query: types.CallbackQuery, state: FSMCo
     # Устанавливаем состояние set_attempts
     await state.set_state(GameStates.set_attempts)
     await callback_query.message.answer(LEXICON["set_attempts_prompt"], reply_markup=settings_menu_keyboard())
+    await callback_query.answer()
 
 
 async def set_attempts(message: types.Message, state: FSMContext):
@@ -109,6 +116,7 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
                 missing_settings=", ".join(missing_settings)),
             reply_markup=settings_menu_keyboard()
         )
+        await callback_query.answer()
     else:
         # Если все настройки указаны, переводим бота в состояние игры
         await state.set_state(GameStates.game)
@@ -118,3 +126,4 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
             LEXICON["play_prompt"],
             reply_markup=game_menu_keyboard()
         )
+        await callback_query.answer()
