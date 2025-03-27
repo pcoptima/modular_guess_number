@@ -4,6 +4,7 @@ from lexicon import LEXICON
 from states import GameStates
 from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
                        settings_menu_keyboard, main_menu_keyboard, game_menu_keyboard)
+from db import save_user_settings, load_user_settings
 
 
 async def send_welcome(message: types.Message):
@@ -25,11 +26,19 @@ async def process_settings(callback_query: types.CallbackQuery):
 
 
 async def process_my_settings(callback_query: types.CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    range_start = data.get('range_start')
-    range_end = data.get('range_end')
-    time_limit = data.get('time_limit')
-    attempts = data.get('attempts')
+    user_id = callback_query.from_user.id
+    # Загружаем настройки из базы данных
+    settings = load_user_settings(user_id)
+    if settings:
+        range_start, range_end, time_limit, attempts, _ = settings
+        await state.update_data(
+            range_start=range_start,
+            range_end=range_end,
+            time_limit=time_limit,
+            attempts=attempts
+        )
+    else:
+        range_start = range_end = time_limit = attempts = "не указано"
     await callback_query.message.answer(LEXICON["my_settings"].format(
         range_start=range_start,
         range_end=range_end,
@@ -49,9 +58,11 @@ async def process_set_range(callback_query: types.CallbackQuery, state: FSMConte
 async def set_range(message: types.Message, state: FSMContext):
     try:
         range_start, range_end = map(int, message.text.split())
-        # Сохраняем данные в состояние
+        user_id = message.from_user.id
+        # Сохраняем данные в состояние и базу данных
         await state.update_data(range_start=range_start, range_end=range_end)
-        # Устанавливаем состояние out_game
+        save_user_settings(user_id, range_start=range_start,
+                           range_end=range_end)
         await state.set_state(GameStates.out_game)
         await message.reply(LEXICON["set_range_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
@@ -68,10 +79,11 @@ async def process_set_time(callback_query: types.CallbackQuery, state: FSMContex
 async def set_time(message: types.Message, state: FSMContext):
     try:
         time_limit = int(message.text)
-        # Сохраняем данные в состояние
+        user_id = message.from_user.id
+        # Сохраняем данные в состояние и базу данных
         await state.update_data(time_limit=time_limit)
-        # Устанавливаем состояние set_time
-        await state.set_state(GameStates.set_time)
+        save_user_settings(user_id, time_limit=time_limit)
+        await state.set_state(GameStates.out_game)
         await message.reply(LEXICON["set_time_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
         await message.reply(LEXICON["set_time_error"])
@@ -87,10 +99,11 @@ async def process_set_attempts(callback_query: types.CallbackQuery, state: FSMCo
 async def set_attempts(message: types.Message, state: FSMContext):
     try:
         attempts = int(message.text)
-        # Сохраняем данные в состояние
+        user_id = message.from_user.id
+        # Сохраняем данные в состояние и базу данных
         await state.update_data(attempts=attempts)
-        # Устанавливаем состояние set_attempts
-        await state.set_state(GameStates.set_attempts)
+        save_user_settings(user_id, attempts=attempts)
+        await state.set_state(GameStates.out_game)
         await message.reply(LEXICON["set_attempts_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
         await message.reply(LEXICON["set_attempts_error"])
