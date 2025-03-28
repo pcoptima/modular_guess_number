@@ -3,8 +3,8 @@ from aiogram.fsm.context import FSMContext
 from lexicon import LEXICON
 from states import GameStates
 from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
-                       settings_menu_keyboard, main_menu_keyboard, game_menu_keyboard)
-from db import save_user_settings, load_user_settings
+                       settings_menu_keyboard, main_menu_keyboard)
+from db import save_user_settings, load_user_settings, save_user_state
 from random import randint
 
 
@@ -28,8 +28,6 @@ async def process_settings(callback_query: types.CallbackQuery):
 
 async def process_my_settings(callback_query: types.CallbackQuery, state: FSMContext):
     user_id = callback_query.from_user.id
-    # Очищаем данные FSM
-    await state.clear()
     # Загружаем настройки из базы данных
     settings = await load_user_settings(user_id)
     if settings:
@@ -67,6 +65,7 @@ async def set_range(message: types.Message, state: FSMContext):
         await save_user_settings(user_id, range_start=range_start,
                                  range_end=range_end)
         await state.set_state(GameStates.out_game)
+        await save_user_state(user_id, "out_game")  # Обновляем состояние в БД
         await message.reply(LEXICON["set_range_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
         await message.reply(LEXICON["set_range_error"])
@@ -87,6 +86,7 @@ async def set_time(message: types.Message, state: FSMContext):
         await state.update_data(time_limit=time_limit)
         await save_user_settings(user_id, time_limit=time_limit)
         await state.set_state(GameStates.out_game)
+        await save_user_state(user_id, "out_game")  # Обновляем состояние в БД
         await message.reply(LEXICON["set_time_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
         await message.reply(LEXICON["set_time_error"])
@@ -107,6 +107,7 @@ async def set_attempts(message: types.Message, state: FSMContext):
         await state.update_data(attempts=attempts)
         await save_user_settings(user_id, attempts=attempts)
         await state.set_state(GameStates.out_game)
+        await save_user_state(user_id, "out_game")  # Обновляем состояние в БД
         await message.reply(LEXICON["set_attempts_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
         await message.reply(LEXICON["set_attempts_error"])
