@@ -4,7 +4,8 @@ from random import randint
 from lexicon import LEXICON
 from states import GameStates
 from keyboards import game_menu_keyboard, settings_menu_keyboard
-from db import save_game_data, save_user_state
+from db import save_game_data, save_user_state, increment_games_lost, get_max_game_id
+import asyncio  # Добавлено для работы с таймером
 
 
 async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
@@ -42,6 +43,27 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
             return
         await state.update_data(target_number=target_number)
         await save_game_data(user_id=user_id, target_number=target_number)
+
+        # Запускаем таймер игры
+        async def game_timer():
+            await asyncio.sleep(data['time_limit'])
+            current_state = await state.get_state()
+            if current_state == GameStates.game:
+                # Получаем максимальный game_id для пользователя
+                game_id = await get_max_game_id(user_id)
+                await save_game_data(game_id=game_id, user_id=user_id, results="lost")
+
+                # Завершаем игру, если время истекло
+                await state.set_state(GameStates.out_game)
+                await save_user_state(user_id, "out_game")
+                # Увеличиваем значение поля games_lost на 1
+                await increment_games_lost(user_id)
+                await callback_query.message.answer(
+                    LEXICON["game_lost_time"].format(
+                        time_limit=data['time_limit'])
+                )
+
+        asyncio.create_task(game_timer())
 
         # Отправляем сообщение с приглашением ввести число
         await callback_query.message.answer(

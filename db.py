@@ -109,16 +109,30 @@ async def load_user_settings(user_id):
         return result
 
 
-async def get_game_id(user_id):
+# async def get_game_id(user_id):
+#     async with aiosqlite.connect('game.db') as conn:
+#         cursor = await conn.execute('''
+#             SELECT game_id
+#             FROM games
+#             WHERE user_id = ? AND EXISTS (
+#                 SELECT 1
+#                 FROM users
+#                 WHERE users.user_id = games.user_id AND fsm_state = 'game'
+#             )
+#         ''', (user_id,))
+#         result = await cursor.fetchone()
+#         return result[0] if result else None
+
+
+async def get_max_game_id(user_id: int):
+    """
+    Возвращает максимальный game_id для указанного user_id.
+    """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
-            SELECT game_id
+            SELECT MAX(game_id)
             FROM games
-            WHERE user_id = ? AND EXISTS (
-                SELECT 1
-                FROM users
-                WHERE users.user_id = games.user_id AND fsm_state = 'game'
-            )
+            WHERE user_id = ?
         ''', (user_id,))
         result = await cursor.fetchone()
         return result[0] if result else None
@@ -134,4 +148,17 @@ async def save_user_state(user_id: int, state: str):
             SET fsm_state = ?
             WHERE user_id = ?
         ''', (state, user_id))
+        await conn.commit()
+
+
+async def increment_games_lost(user_id: int):
+    """
+    Увеличивает значение поля games_lost на 1 для пользователя с указанным user_id.
+    """
+    async with aiosqlite.connect('game.db') as conn:
+        await conn.execute('''
+            UPDATE users
+            SET games_lost = games_lost + 1
+            WHERE user_id = ?
+        ''', (user_id,))
         await conn.commit()
