@@ -33,7 +33,6 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
         # Если все настройки указаны, переводим бота в состояние игры
         await state.set_state(GameStates.game)
         await save_user_state(user_id, "game")
-        # ... логика начала игры ...
 
         # Устанавливаем целевое число и сохраняем его в базу данных
         target_number = randint(data['range_start'], data['range_end'])
@@ -41,7 +40,6 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
         if user_id is None:
             print("Ошибка: не удалось определить ID пользователя.")
             return
-
         await state.update_data(target_number=target_number)
         await save_game_data(user_id=user_id, target_number=target_number)
 
