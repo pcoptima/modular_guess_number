@@ -5,6 +5,7 @@ from states import GameStates
 from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
                        settings_menu_keyboard, main_menu_keyboard, game_menu_keyboard)
 from db import save_user_settings, load_user_settings
+from random import randint
 
 
 async def send_welcome(message: types.Message):
@@ -27,8 +28,10 @@ async def process_settings(callback_query: types.CallbackQuery):
 
 async def process_my_settings(callback_query: types.CallbackQuery, state: FSMContext):
     user_id = callback_query.from_user.id
+    # Очищаем данные FSM
+    await state.clear()
     # Загружаем настройки из базы данных
-    settings = load_user_settings(user_id)
+    settings = await load_user_settings(user_id)
     if settings:
         range_start, range_end, time_limit, attempts, _ = settings
         await state.update_data(
@@ -61,8 +64,8 @@ async def set_range(message: types.Message, state: FSMContext):
         user_id = message.from_user.id
         # Сохраняем данные в состояние и базу данных
         await state.update_data(range_start=range_start, range_end=range_end)
-        save_user_settings(user_id, range_start=range_start,
-                           range_end=range_end)
+        await save_user_settings(user_id, range_start=range_start,
+                                 range_end=range_end)
         await state.set_state(GameStates.out_game)
         await message.reply(LEXICON["set_range_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
@@ -82,7 +85,7 @@ async def set_time(message: types.Message, state: FSMContext):
         user_id = message.from_user.id
         # Сохраняем данные в состояние и базу данных
         await state.update_data(time_limit=time_limit)
-        save_user_settings(user_id, time_limit=time_limit)
+        await save_user_settings(user_id, time_limit=time_limit)
         await state.set_state(GameStates.out_game)
         await message.reply(LEXICON["set_time_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
@@ -102,41 +105,8 @@ async def set_attempts(message: types.Message, state: FSMContext):
         user_id = message.from_user.id
         # Сохраняем данные в состояние и базу данных
         await state.update_data(attempts=attempts)
-        save_user_settings(user_id, attempts=attempts)
+        await save_user_settings(user_id, attempts=attempts)
         await state.set_state(GameStates.out_game)
         await message.reply(LEXICON["set_attempts_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
         await message.reply(LEXICON["set_attempts_error"])
-
-
-async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
-    data = await state.get_data()  # Получаем данные из состояния
-    # Проверяем, указаны ли все необходимые настройки
-    if 'range_start' not in data or 'range_end' not in data or 'time_limit' not in data or 'attempts' not in data:
-        missing_settings = []
-        # Если диапазон чисел не указан, добавляем его в список отсутствующих настроек
-        if 'range_start' not in data or 'range_end' not in data:
-            missing_settings.append("Диапазон чисел")
-        # Если лимит времени не указан, добавляем его в список отсутствующих настроек
-        if 'time_limit' not in data:
-            missing_settings.append("Время")
-        # Если количество попыток не указано, добавляем его в список отсутствующих настроек
-        if 'attempts' not in data:
-            missing_settings.append("Попыток")
-        # Отправляем сообщение с перечислением отсутствующих настроек
-        await callback_query.message.answer(
-            LEXICON["missing_settings"].format(
-                missing_settings=", ".join(missing_settings)),
-            reply_markup=settings_menu_keyboard()
-        )
-        await callback_query.answer()
-    else:
-        # Если все настройки указаны, переводим бота в состояние игры
-        await state.set_state(GameStates.game)
-        # ... логика начала игры ...
-        # Отправляем сообщение с приглашением ввести число
-        await callback_query.message.answer(
-            LEXICON["play_prompt"],
-            reply_markup=game_menu_keyboard()
-        )
-        await callback_query.answer()

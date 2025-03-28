@@ -1,7 +1,7 @@
 import sqlite3
 
 
-def init_db():
+async def init_db():
     conn = sqlite3.connect('game.db')
     cursor = conn.cursor()
     cursor.execute('''
@@ -31,7 +31,7 @@ def init_db():
     conn.close()
 
 
-def save_user_settings(user_id, range_start=None, range_end=None, time_limit=None, attempts=None, fsm_state=None):
+async def save_user_settings(user_id, range_start=None, range_end=None, time_limit=None, attempts=None, fsm_state=None):
     conn = sqlite3.connect('game.db')
     cursor = conn.cursor()
     # Получаем текущие значения из базы данных
@@ -62,7 +62,54 @@ def save_user_settings(user_id, range_start=None, range_end=None, time_limit=Non
     conn.close()
 
 
-def load_user_settings(user_id):
+async def save_game_data(game_id=None, user_id=None, target_number=None, attempts_left=None, start_time=None):
+    conn = sqlite3.connect('game.db')
+    cursor = conn.cursor()
+    try:
+        # Проверяем, существует ли пользователь с данным user_id
+        cursor.execute('SELECT 1 FROM users WHERE user_id = ?', (user_id,))
+        if not cursor.fetchone():
+            raise ValueError(
+                f"User with user_id {user_id} does not exist in the users table.")
+
+        # Если game_id передан, обновляем существующую запись
+        if game_id is not None:
+            cursor.execute(
+                'SELECT user_id, target_number, attempts_left, start_time FROM games WHERE game_id = ?', (game_id,))
+            current_game = cursor.fetchone()
+
+            if current_game:
+                user_id = user_id if user_id is not None else current_game[0]
+                target_number = target_number if target_number is not None else current_game[
+                    1]
+                attempts_left = attempts_left if attempts_left is not None else current_game[
+                    2]
+                start_time = start_time if start_time is not None else current_game[3]
+                cursor.execute('''
+                    UPDATE games
+                    SET user_id = ?, target_number = ?, attempts_left = ?, start_time = ?
+                    WHERE game_id = ?
+                ''', (user_id, target_number, attempts_left, start_time, game_id))
+        else:
+            # Если game_id не передан, создаем новую запись
+            # Устанавливаем значения по умолчанию для attempts_left и start_time
+            attempts_left = attempts_left if attempts_left is not None else 0
+            start_time = start_time if start_time is not None else None
+            cursor.execute('''
+                INSERT INTO games (user_id, target_number, attempts_left, start_time)
+                VALUES (?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
+            ''', (user_id, target_number, attempts_left, start_time))
+
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
+    except ValueError as ve:
+        print(f"Value error: {ve}")
+    finally:
+        conn.close()
+
+
+async def load_user_settings(user_id):
     conn = sqlite3.connect('game.db')
     cursor = conn.cursor()
     cursor.execute('''
@@ -73,6 +120,23 @@ def load_user_settings(user_id):
     result = cursor.fetchone()
     conn.close()
     return result
+
+
+async def get_game_id(user_id):
+    conn = sqlite3.connect('game.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT game_id
+        FROM games
+        WHERE user_id = ? AND EXISTS (
+            SELECT 1
+            FROM users
+            WHERE users.user_id = games.user_id AND fsm_state = 'game'
+        )
+    ''', (user_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else None
 
 
 if __name__ == '__main__':

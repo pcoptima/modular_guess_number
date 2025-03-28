@@ -8,10 +8,11 @@ from dotenv import load_dotenv
 import os
 from db import init_db
 from aiogram import Router, F
-from handlers import (send_welcome, process_help, process_rules, process_settings,
-                      process_set_range, set_range, process_set_time,
-                      process_set_attempts, set_attempts, set_time,
-                      process_my_settings, process_play)
+from handlers.user_handlers import (send_welcome, process_help, process_rules, process_settings,
+                                    process_set_range, set_range, process_set_time,
+                                    process_set_attempts, set_attempts, set_time,
+                                    process_my_settings)
+from handlers.play_handlers import process_play  # Обновляем импорт
 
 load_dotenv()
 
@@ -41,7 +42,7 @@ router.callback_query.register(process_play, F.data == "play")
 
 
 async def main():
-    init_db()  # Вызываем инициализацию базы данных
+    await init_db()  # Вызываем инициализацию базы данных
     await dp.start_polling(bot, skip_updates=True)
 
 if __name__ == "__main__":
