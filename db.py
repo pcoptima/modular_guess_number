@@ -109,21 +109,6 @@ async def load_user_settings(user_id):
         return result
 
 
-# async def get_game_id(user_id):
-#     async with aiosqlite.connect('game.db') as conn:
-#         cursor = await conn.execute('''
-#             SELECT game_id
-#             FROM games
-#             WHERE user_id = ? AND EXISTS (
-#                 SELECT 1
-#                 FROM users
-#                 WHERE users.user_id = games.user_id AND fsm_state = 'game'
-#             )
-#         ''', (user_id,))
-#         result = await cursor.fetchone()
-#         return result[0] if result else None
-
-
 async def get_max_game_id(user_id: int):
     """
     Возвращает максимальный game_id для указанного user_id.
@@ -162,3 +147,34 @@ async def increment_games_lost(user_id: int):
             WHERE user_id = ?
         ''', (user_id,))
         await conn.commit()
+
+
+async def set_attempts_left(user_id: int):
+    """
+    Устанавливает значение attempts_left в таблице games равным attempts из таблицы users, если fsm_state равно 'game'.
+    """
+    async with aiosqlite.connect('game.db') as conn:
+        cursor = await conn.execute('''
+            SELECT attempts, fsm_state
+            FROM users
+            WHERE user_id = ?
+        ''', (user_id,))
+        user = await cursor.fetchone()
+
+        if user and user[1] == 'game':
+            # Используем метод get_max_game_id для получения максимального game_id
+            max_game_id = await get_max_game_id(user_id)
+            if max_game_id:
+                await conn.execute('''
+                    UPDATE games
+                    SET attempts_left = ?
+                    WHERE game_id = ?
+                ''', (user[0], max_game_id))
+                await conn.commit()
+                cursor = await conn.execute('''
+                    SELECT attempts_left
+                    FROM games
+                    WHERE game_id = ?
+                ''', (max_game_id,))
+                result = await cursor.fetchone()
+                return result[0] if result else None

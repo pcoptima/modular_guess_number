@@ -4,7 +4,7 @@ from random import randint
 from lexicon import LEXICON
 from states import GameStates
 from keyboards import game_menu_keyboard, settings_menu_keyboard
-from db import save_game_data, save_user_state, increment_games_lost, get_max_game_id
+from db import save_game_data, save_user_state, increment_games_lost, get_max_game_id, set_attempts_left
 import asyncio  # Добавлено для работы с таймером
 
 
@@ -30,8 +30,8 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
         )
         await callback_query.answer()
     else:
-        user_id = callback_query.from_user.id
         # Если все настройки указаны, переводим бота в состояние игры
+        user_id = callback_query.from_user.id
         await state.set_state(GameStates.game)
         await save_user_state(user_id, "game")
 
@@ -66,8 +66,11 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
         asyncio.create_task(game_timer())
 
         # Отправляем сообщение с приглашением ввести число
+        attempts_left = await set_attempts_left(user_id)
         await callback_query.message.answer(
-            LEXICON["play_prompt"],
+            LEXICON["play_prompt"].format(
+                attempts_left=attempts_left
+            ),
             reply_markup=game_menu_keyboard()
         )
         await callback_query.answer()
