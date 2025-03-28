@@ -88,7 +88,7 @@ async def save_game_data(game_id=None, user_id=None, target_number=None, attempt
                 start_time = start_time if start_time is not None else None
                 await conn.execute('''
                     INSERT INTO games (user_id, target_number, attempts_left, start_time, results)
-                    VALUES (?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?)
+                    VALUES (?, ?, ?, COALESCE(?, DATETIME('now', 'localtime')), ?)
                 ''', (user_id, target_number, attempts_left, start_time, results))
 
             await conn.commit()
