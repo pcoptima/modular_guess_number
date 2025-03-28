@@ -4,7 +4,7 @@ from random import randint
 from lexicon import LEXICON
 from states import GameStates
 from keyboards import game_menu_keyboard, settings_menu_keyboard
-from db import save_game_data
+from db import save_game_data, save_user_state
 
 
 async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
@@ -29,14 +29,14 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext):
         )
         await callback_query.answer()
     else:
+        user_id = callback_query.from_user.id
         # Если все настройки указаны, переводим бота в состояние игры
         await state.set_state(GameStates.game)
+        await save_user_state(user_id, "game")
         # ... логика начала игры ...
 
         # Устанавливаем целевое число и сохраняем его в базу данных
         target_number = randint(data['range_start'], data['range_end'])
-        user_id = callback_query.from_user.id
-
         # Проверяем, что user_id не равен None
         if user_id is None:
             print("Ошибка: не удалось определить ID пользователя.")
