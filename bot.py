@@ -12,7 +12,7 @@ from handlers.user_handlers import (send_welcome, process_help, process_rules, p
                                     process_set_range, set_range, process_set_time,
                                     process_set_attempts, set_attempts, set_time,
                                     process_my_settings)
-from handlers.play_handlers import process_play  # Обновляем импорт
+from handlers.play_handlers import process_play
 
 load_dotenv()
 

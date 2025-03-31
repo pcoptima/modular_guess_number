@@ -1,8 +1,9 @@
+from typing import Optional, Union
 from databases import Database
 import aiosqlite
 
 
-async def init_db():
+async def init_db() -> None:
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -31,7 +32,14 @@ async def init_db():
         await conn.commit()
 
 
-async def save_user_settings(user_id, range_start=None, range_end=None, time_limit=None, attempts=None, fsm_state=None):
+async def save_user_settings(
+    user_id: int,
+    range_start: Optional[int] = None,
+    range_end: Optional[int] = None,
+    time_limit: Optional[int] = None,
+    attempts: Optional[int] = None,
+    fsm_state: Optional[str] = None
+) -> None:
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute(
             'SELECT range_start, range_end, time_limit, attempts, fsm_state FROM users WHERE user_id = ?', (user_id,))
@@ -57,7 +65,14 @@ async def save_user_settings(user_id, range_start=None, range_end=None, time_lim
         await conn.commit()
 
 
-async def save_game_data(game_id=None, user_id=None, target_number=None, attempts_left=None, start_time=None, results=None):
+async def save_game_data(
+    game_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    target_number: Optional[int] = None,
+    attempts_left: Optional[int] = None,
+    start_time: Optional[Union[str, None]] = None,
+    results: Optional[str] = None
+) -> None:
     async with aiosqlite.connect('game.db') as conn:
         try:
             cursor = await conn.execute('SELECT 1 FROM users WHERE user_id = ?', (user_id,))
@@ -98,7 +113,7 @@ async def save_game_data(game_id=None, user_id=None, target_number=None, attempt
             print(f"Value error: {ve}")
 
 
-async def load_user_settings(user_id):
+async def load_user_settings(user_id: int) -> Optional[tuple]:
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
             SELECT range_start, range_end, time_limit, attempts, fsm_state
@@ -109,7 +124,20 @@ async def load_user_settings(user_id):
         return result
 
 
-async def get_max_game_id(user_id: int):
+async def user_settings_to_dict(user_id: int) -> Optional[dict]:
+    """
+    Преобразует кортеж, получаемый из load_user_settings(), в словарь с ключами:
+    range_start, range_end, time_limit, attempts, fsm_state.
+    """
+    settings = await load_user_settings(user_id)
+    if settings:
+        keys = ['range_start', 'range_end',
+                'time_limit', 'attempts', 'fsm_state']
+        return dict(zip(keys, settings))
+    return None
+
+
+async def get_max_game_id(user_id: int) -> Optional[int]:
     """
     Возвращает максимальный game_id для указанного user_id.
     """
@@ -123,7 +151,7 @@ async def get_max_game_id(user_id: int):
         return result[0] if result else None
 
 
-async def save_user_state(user_id: int, state: str):
+async def save_user_state(user_id: int, state: str) -> None:
     """
     Обновляет состояние пользователя в таблице users.
     """
@@ -136,7 +164,7 @@ async def save_user_state(user_id: int, state: str):
         await conn.commit()
 
 
-async def increment_games_lost(user_id: int):
+async def increment_games_lost(user_id: int) -> None:
     """
     Увеличивает значение поля games_lost на 1 для пользователя с указанным user_id.
     """
@@ -149,7 +177,7 @@ async def increment_games_lost(user_id: int):
         await conn.commit()
 
 
-async def set_attempts_left(user_id: int):
+async def set_attempts_left(user_id: int) -> Optional[int]:
     """
     Устанавливает значение attempts_left в таблице games равным attempts из таблицы users, если fsm_state равно 'game'.
     """

@@ -4,8 +4,9 @@ from typing import Dict, Any, List
 from random import randint
 from lexicon import LEXICON
 from states import GameStates
-from keyboards import game_menu_keyboard, settings_menu_keyboard
-from db import save_game_data, save_user_state, increment_games_lost, get_max_game_id, set_attempts_left
+from keyboards import in_game_menu_keyboard, settings_menu_keyboard
+from db import (save_game_data, save_user_state, increment_games_lost,
+                get_max_game_id, set_attempts_left, user_settings_to_dict)
 import asyncio  # Добавлено для работы с таймером
 
 
@@ -65,7 +66,7 @@ async def initialize_game(callback_query: types.CallbackQuery, state: FSMContext
         LEXICON["play_prompt"].format(
             attempts_left=attempts_left
         ),
-        reply_markup=game_menu_keyboard()
+        reply_markup=in_game_menu_keyboard()
     )
     await callback_query.answer()
 
@@ -75,6 +76,9 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext) -
     Основной метод для обработки команды начала игры.
     Проверяет настройки и запускает игру, если все настройки указаны.
     """
+    user_id = callback_query.from_user.id
+    user_settings = await user_settings_to_dict(user_id)
+    await state.update_data(**user_settings)
     data = await state.get_data()
     missing_settings = await check_missing_settings(data)
     if missing_settings:

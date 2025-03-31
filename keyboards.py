@@ -87,3 +87,26 @@ def game_menu_keyboard():
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
     return keyboard
+
+
+def in_game_menu_keyboard():
+    kb = [
+        [
+            types.InlineKeyboardButton(
+                text="Настройка игры", callback_data="settings"),
+            types.InlineKeyboardButton(
+                text="Мои настройки", callback_data="my_settings"),
+            types.InlineKeyboardButton(
+                text="Статистика", callback_data="stats")
+        ],
+        [
+            types.InlineKeyboardButton(
+                text="Прервать", callback_data="cancel")
+        ],
+        [
+            types.InlineKeyboardButton(
+                text="Правила игры", callback_data="rules")
+        ]
+    ]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    return keyboard
