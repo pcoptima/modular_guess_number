@@ -4,7 +4,7 @@ from lexicon import LEXICON
 from states import GameStates
 from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
                        settings_menu_keyboard, main_menu_keyboard)
-from db import save_user_settings, load_user_settings, save_user_state
+from db import save_user_settings, load_user_settings, save_user_state, reset_settings
 from random import randint
 
 
@@ -44,7 +44,7 @@ async def process_interrupt(callback_query: types.CallbackQuery, state: FSMConte
     user_id = callback_query.from_user.id
     # Сбрасываем настройки пользователя
     await state.clear()
-    await save_user_settings(user_id, range_start=0, range_end=0, time_limit=0, attempts=0)
+    await reset_settings(user_id)
     # Устанавливаем состояние игры
     await state.set_state(GameStates.out_game)
     await save_user_state(user_id, "out_game")  # Обновляем состояние в БД

@@ -16,11 +16,11 @@ async def check_missing_settings(data: Dict[str, Any]) -> List[str]:
     Возвращает список отсутствующих настроек.
     """
     missing_settings = []
-    if 'range_start' not in data or 'range_end' not in data:
+    if data['range_start'] is None or data['range_end'] is None:
         missing_settings.append("Диапазон чисел")
-    if 'time_limit' not in data:
+    if data['time_limit'] is None:
         missing_settings.append("Время")
-    if 'attempts' not in data:
+    if data['attempts'] is None:
         missing_settings.append("Попыток")
     return missing_settings
 

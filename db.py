@@ -71,19 +71,19 @@ async def save_user_settings(
         await conn.commit()
 
 
-# async def reset_settings(user_id: int) -> None:
-#     """
-#     Сбрасывает настройки пользователя в таблице users:
-#     range_start, range_end, time_limit, attempts устанавливаются в NULL,
-#     а fsm_state устанавливается в 'out_game'.
-#     """
-#     async with aiosqlite.connect('game.db') as conn:
-#         await conn.execute('''
-#             UPDATE users
-#             SET range_start = NULL, range_end = NULL, time_limit = NULL, attempts = NULL, fsm_state = 'out_game'
-#             WHERE user_id = ?
-#         ''', (user_id,))
-#         await conn.commit()
+async def reset_settings(user_id: int) -> None:
+    """
+    Сбрасывает настройки пользователя в таблице users:
+    range_start, range_end, time_limit, attempts устанавливаются в NULL,
+    а fsm_state устанавливается в 'out_game'.
+    """
+    async with aiosqlite.connect('game.db') as conn:
+        await conn.execute('''
+            UPDATE users
+            SET range_start = NULL, range_end = NULL, time_limit = NULL, attempts = NULL, fsm_state = 'out_game'
+            WHERE user_id = ?
+        ''', (user_id,))
+        await conn.commit()
 
 
 async def save_game_data(
