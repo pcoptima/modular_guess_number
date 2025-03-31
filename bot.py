@@ -11,7 +11,7 @@ from aiogram import Router, F
 from handlers.user_handlers import (send_welcome, process_help, process_rules, process_settings,
                                     process_set_range, set_range, process_set_time,
                                     process_set_attempts, set_attempts, set_time,
-                                    process_my_settings, process_interrupt)
+                                    process_my_settings, process_interrupt, handle_out_of_game_message)
 from handlers.play_handlers import process_play
 
 load_dotenv()
@@ -36,10 +36,11 @@ router.callback_query.register(process_set_range, F.data == "set_range")
 router.callback_query.register(process_set_time, F.data == "set_time")
 router.callback_query.register(process_set_attempts, F.data == "set_attempts")
 router.callback_query.register(process_interrupt, F.data == "cancel")
+router.callback_query.register(process_play, F.data == "play")
 router.message.register(set_range, GameStates.set_range)
 router.message.register(set_time, GameStates.set_time)
 router.message.register(set_attempts, GameStates.set_attempts)
-router.callback_query.register(process_play, F.data == "play")
+router.message.register(handle_out_of_game_message, F.text)
 
 
 async def main():

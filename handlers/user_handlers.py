@@ -126,3 +126,14 @@ async def set_attempts(message: types.Message, state: FSMContext):
         await message.reply(LEXICON["set_attempts_success"], reply_markup=settings_menu_keyboard())
     except ValueError:
         await message.reply(LEXICON["set_attempts_error"])
+
+
+async def handle_out_of_game_message(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state != GameStates.game:
+        if message.text.isdigit():
+            await message.answer(LEXICON["out_game"],
+                                 reply_markup=main_menu_keyboard()
+                                 )
+        else:
+            await message.answer(LEXICON["only_numbers"], reply_markup=main_menu_keyboard())
