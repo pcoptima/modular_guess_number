@@ -26,9 +26,7 @@ async def process_settings(callback_query: types.CallbackQuery):
     await callback_query.answer()
 
 
-async def process_my_settings(callback_query: types.CallbackQuery, state: FSMContext):
-    user_id = callback_query.from_user.id
-    # Загружаем настройки из базы данных
+async def load_settings_from_db(user_id: int, state: FSMContext):
     settings = await load_user_settings(user_id)
     if settings:
         range_start, range_end, time_limit, attempts, _ = settings
@@ -38,8 +36,25 @@ async def process_my_settings(callback_query: types.CallbackQuery, state: FSMCon
             time_limit=time_limit,
             attempts=attempts
         )
-    else:
-        range_start = range_end = time_limit = attempts = "не указано"
+        return range_start, range_end, time_limit, attempts
+    return "не указано", "не указано", "не указано", "не указано"
+
+
+async def process_interrupt(callback_query: types.CallbackQuery, state: FSMContext):
+    user_id = callback_query.from_user.id
+    # Сбрасываем настройки пользователя
+    await state.clear()
+    await save_user_settings(user_id, range_start=0, range_end=0, time_limit=0, attempts=0)
+    # Устанавливаем состояние игры
+    await state.set_state(GameStates.out_game)
+    await save_user_state(user_id, "out_game")  # Обновляем состояние в БД
+    await callback_query.message.answer(LEXICON["interrupt"], reply_markup=my_settings_menu_keyboard())
+    await callback_query.answer()
+
+
+async def process_my_settings(callback_query: types.CallbackQuery, state: FSMContext):
+    user_id = callback_query.from_user.id
+    range_start, range_end, time_limit, attempts = await load_settings_from_db(user_id, state)
     await callback_query.message.answer(LEXICON["my_settings"].format(
         range_start=range_start,
         range_end=range_end,

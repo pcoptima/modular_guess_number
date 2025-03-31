@@ -4,6 +4,9 @@ import aiosqlite
 
 
 async def init_db() -> None:
+    """
+    Инициализирует базу данных, создавая таблицы users и games, если они не существуют.
+    """
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -40,6 +43,9 @@ async def save_user_settings(
     attempts: Optional[int] = None,
     fsm_state: Optional[str] = None
 ) -> None:
+    """
+    Сохраняет или обновляет настройки пользователя в таблице users.
+    """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute(
             'SELECT range_start, range_end, time_limit, attempts, fsm_state FROM users WHERE user_id = ?', (user_id,))
@@ -65,6 +71,21 @@ async def save_user_settings(
         await conn.commit()
 
 
+# async def reset_settings(user_id: int) -> None:
+#     """
+#     Сбрасывает настройки пользователя в таблице users:
+#     range_start, range_end, time_limit, attempts устанавливаются в NULL,
+#     а fsm_state устанавливается в 'out_game'.
+#     """
+#     async with aiosqlite.connect('game.db') as conn:
+#         await conn.execute('''
+#             UPDATE users
+#             SET range_start = NULL, range_end = NULL, time_limit = NULL, attempts = NULL, fsm_state = 'out_game'
+#             WHERE user_id = ?
+#         ''', (user_id,))
+#         await conn.commit()
+
+
 async def save_game_data(
     game_id: Optional[int] = None,
     user_id: Optional[int] = None,
@@ -73,6 +94,9 @@ async def save_game_data(
     start_time: Optional[Union[str, None]] = None,
     results: Optional[str] = None
 ) -> None:
+    """
+    Сохраняет или обновляет данные игры в таблице games.
+    """
     async with aiosqlite.connect('game.db') as conn:
         try:
             cursor = await conn.execute('SELECT 1 FROM users WHERE user_id = ?', (user_id,))
@@ -114,6 +138,9 @@ async def save_game_data(
 
 
 async def load_user_settings(user_id: int) -> Optional[tuple]:
+    """
+    Загружает настройки пользователя из таблицы users по user_id.
+    """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
             SELECT range_start, range_end, time_limit, attempts, fsm_state
@@ -126,7 +153,7 @@ async def load_user_settings(user_id: int) -> Optional[tuple]:
 
 async def user_settings_to_dict(user_id: int) -> Optional[dict]:
     """
-    Преобразует кортеж, получаемый из load_user_settings(), в словарь с ключами:
+    Преобразует настройки пользователя из кортежа в словарь с ключами:
     range_start, range_end, time_limit, attempts, fsm_state.
     """
     settings = await load_user_settings(user_id)
@@ -139,7 +166,7 @@ async def user_settings_to_dict(user_id: int) -> Optional[dict]:
 
 async def get_max_game_id(user_id: int) -> Optional[int]:
     """
-    Возвращает максимальный game_id для указанного user_id.
+    Возвращает максимальный game_id для указанного user_id из таблицы games.
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
@@ -153,7 +180,7 @@ async def get_max_game_id(user_id: int) -> Optional[int]:
 
 async def save_user_state(user_id: int, state: str) -> None:
     """
-    Обновляет состояние пользователя в таблице users.
+    Обновляет состояние пользователя (fsm_state) в таблице users.
     """
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
@@ -166,7 +193,7 @@ async def save_user_state(user_id: int, state: str) -> None:
 
 async def increment_games_lost(user_id: int) -> None:
     """
-    Увеличивает значение поля games_lost на 1 для пользователя с указанным user_id.
+    Увеличивает на 1 значение поля games_lost для указанного user_id в таблице users.
     """
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
@@ -179,7 +206,8 @@ async def increment_games_lost(user_id: int) -> None:
 
 async def set_attempts_left(user_id: int) -> Optional[int]:
     """
-    Устанавливает значение attempts_left в таблице games равным attempts из таблицы users, если fsm_state равно 'game'.
+    Устанавливает значение attempts_left в таблице games равным attempts из таблицы users,
+    если fsm_state равно 'game'.
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
