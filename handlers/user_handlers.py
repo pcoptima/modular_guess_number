@@ -5,7 +5,6 @@ from states import GameStates
 from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
                        settings_menu_keyboard, main_menu_keyboard)
 from db import save_user_settings, load_user_settings, save_user_state, reset_settings
-from random import randint
 
 
 async def send_welcome(message: types.Message):
@@ -129,11 +128,9 @@ async def set_attempts(message: types.Message, state: FSMContext):
 
 
 async def handle_out_of_game_message(message: types.Message, state: FSMContext):
-    current_state = await state.get_state()
-    if current_state != GameStates.game:
-        if message.text.isdigit():
-            await message.answer(LEXICON["out_game"],
-                                 reply_markup=main_menu_keyboard()
-                                 )
-        else:
-            await message.answer(LEXICON["only_numbers"], reply_markup=main_menu_keyboard())
+    if message.text.isdigit():
+        await message.answer(LEXICON["out_game"],
+                             reply_markup=main_menu_keyboard()
+                             )
+    else:
+        await message.answer(LEXICON["only_numbers"], reply_markup=main_menu_keyboard())

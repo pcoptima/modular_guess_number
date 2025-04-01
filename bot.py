@@ -2,7 +2,7 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from states import GameStates
 from dotenv import load_dotenv
 import os
@@ -40,7 +40,8 @@ router.callback_query.register(process_play, F.data == "play")
 router.message.register(set_range, GameStates.set_range)
 router.message.register(set_time, GameStates.set_time)
 router.message.register(set_attempts, GameStates.set_attempts)
-router.message.register(handle_out_of_game_message, F.text)
+router.message.register(handle_out_of_game_message,
+                        F.text, ~StateFilter(GameStates.game))
 
 
 async def main():
