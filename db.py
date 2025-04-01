@@ -2,6 +2,7 @@ from typing import Optional, Union
 from databases import Database
 import aiosqlite
 import asyncio
+from datetime import datetime
 
 
 async def init_db() -> None:
@@ -261,3 +262,38 @@ async def decrement_attempts_left(user_id: int) -> Optional[int]:
                 )
                 return new_attempts_left
     return None
+
+
+async def get_time_since_game_start(user_id: int) -> Optional[int]:
+    """
+    Возвращает количество секунд между текущим временем и временем start_time
+    для текущей игры пользователя.
+    """
+    async with aiosqlite.connect('game.db') as conn:
+        max_game_id = await get_max_game_id(user_id)
+        if max_game_id:
+            cursor = await conn.execute('''
+                SELECT start_time
+                FROM games
+                WHERE game_id = ?
+            ''', (max_game_id,))
+            game = await cursor.fetchone()
+
+            if game and game[0]:
+                try:
+                    # Преобразуем строку в объект datetime
+                    start_time = datetime.strptime(
+                        game[0], "%Y-%m-%d %H:%M:%S")
+                    # Вычисляем разницу во времени
+                    time_diff = datetime.now() - start_time
+                    return int(time_diff.total_seconds())
+                except ValueError:
+                    print("Неверный формат времени в поле start_time.")
+    return None
+
+
+async def main():
+    sec = await get_time_since_game_start(606703482)
+    print(sec)
+
+asyncio.run(main())
