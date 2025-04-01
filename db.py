@@ -1,6 +1,7 @@
 from typing import Optional, Union
 from databases import Database
 import aiosqlite
+import asyncio
 
 
 async def init_db() -> None:
@@ -234,3 +235,29 @@ async def set_attempts_left(user_id: int) -> Optional[int]:
                 ''', (max_game_id,))
                 result = await cursor.fetchone()
                 return result[0] if result else None
+
+
+async def decrement_attempts_left(user_id: int) -> Optional[int]:
+    """
+    Уменьшает на 1 значение attempts_left в таблице games для текущей игры пользователя
+    и возвращает обновленное значение.
+    """
+    async with aiosqlite.connect('game.db') as conn:
+        max_game_id = await get_max_game_id(user_id)
+        if max_game_id:
+            cursor = await conn.execute('''
+                SELECT attempts_left
+                FROM games
+                WHERE game_id = ?
+            ''', (max_game_id,))
+            game = await cursor.fetchone()
+
+            if game and game[0] > 0:
+                new_attempts_left = game[0] - 1
+                await save_game_data(
+                    user_id=user_id,
+                    game_id=max_game_id,
+                    attempts_left=new_attempts_left
+                )
+                return new_attempts_left
+    return None

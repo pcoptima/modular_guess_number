@@ -4,9 +4,10 @@ from typing import Dict, Any, List
 from random import randint
 from lexicon import LEXICON
 from states import GameStates
-from keyboards import in_game_menu_keyboard, settings_menu_keyboard
+from keyboards import in_game_menu_keyboard, settings_menu_keyboard, main_menu_keyboard
 from db import (save_game_data, save_user_state, increment_games_lost,
-                get_max_game_id, set_attempts_left, user_settings_to_dict)
+                get_max_game_id, set_attempts_left, user_settings_to_dict,
+                decrement_attempts_left)
 import asyncio  # Добавлено для работы с таймером
 
 
@@ -90,3 +91,20 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext) -
         await callback_query.answer()
     else:
         await initialize_game(callback_query, state, data)
+
+
+async def main_process_play(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_number = int(message.text)
+    data = await state.get_data()
+    target_number = data.get('target_number')
+    if user_number < target_number:
+        attempts_left = await decrement_attempts_left(user_id)
+        if attempts_left:
+            await message.answer(LEXICON["my_number_is_higher"].format(
+                attempts_left=attempts_left
+            ), reply_markup=in_game_menu_keyboard())
+        else:
+            await state.set_state(GameStates.out_game)
+            await save_user_state(user_id, "out_game")
+            await message.answer(LEXICON["game_lost_attempts"], reply_markup=main_menu_keyboard())
