@@ -290,10 +290,3 @@ async def get_time_since_game_start(user_id: int) -> Optional[int]:
                 except ValueError:
                     print("Неверный формат времени в поле start_time.")
     return None
-
-
-async def main():
-    sec = await get_time_since_game_start(606703482)
-    print(sec)
-
-asyncio.run(main())

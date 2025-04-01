@@ -7,7 +7,7 @@ from states import GameStates
 from keyboards import in_game_menu_keyboard, settings_menu_keyboard, main_menu_keyboard
 from db import (save_game_data, save_user_state, increment_games_lost,
                 get_max_game_id, set_attempts_left, user_settings_to_dict,
-                decrement_attempts_left)
+                decrement_attempts_left, get_time_since_game_start)
 import asyncio  # Добавлено для работы с таймером
 
 
@@ -108,3 +108,12 @@ async def main_process_play(message: types.Message, state: FSMContext):
             await state.set_state(GameStates.out_game)
             await save_user_state(user_id, "out_game")
             await message.answer(LEXICON["game_lost_attempts"], reply_markup=main_menu_keyboard())
+    elif user_number == target_number:
+        attempts_left = await decrement_attempts_left(user_id)
+        await state.set_state(GameStates.out_game)
+        await save_user_state(user_id, "out_game")
+        seconds_passed = await get_time_since_game_start(user_id)
+        await message.answer(LEXICON["won_game"].format(
+            attempts_left=attempts_left + 1,
+            seconds_passed=seconds_passed
+        ), reply_markup=main_menu_keyboard())
