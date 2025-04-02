@@ -23,12 +23,13 @@ async def check_missing_settings(data: Dict[str, Any]) -> List[str]:
         List[str]: Список отсутствующих настроек.
     """
     missing_settings = []
-    if data['range_start'] is None or data['range_end'] is None:
-        missing_settings.append("Диапазон чисел")
-    if data['time_limit'] is None:
-        missing_settings.append("Время")
-    if data['attempts'] is None:
-        missing_settings.append("Попыток")
+    if data:
+        if data['range_start'] is None or data['range_end'] is None:
+            missing_settings.append("Диапазон чисел")
+        if data['time_limit'] is None:
+            missing_settings.append("Время")
+        if data['attempts'] is None:
+            missing_settings.append("Попыток")
     return missing_settings
 
 
@@ -129,6 +130,7 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext) -
     else:
         await callback_query.message.answer(LEXICON["my_settings_error"], reply_markup=my_settings_menu_keyboard())
         await callback_query.answer()
+        return
     data = await state.get_data()
     missing_settings = await check_missing_settings(data)
     if missing_settings:
