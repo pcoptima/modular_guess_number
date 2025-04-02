@@ -47,6 +47,13 @@ async def save_user_settings(
 ) -> None:
     """
     Сохраняет или обновляет настройки пользователя в таблице users.
+
+    :param user_id: Идентификатор пользователя.
+    :param range_start: Начало диапазона чисел.
+    :param range_end: Конец диапазона чисел.
+    :param time_limit: Лимит времени.
+    :param attempts: Количество попыток.
+    :param fsm_state: Состояние конечного автомата.
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute(
@@ -75,9 +82,9 @@ async def save_user_settings(
 
 async def reset_settings(user_id: int) -> None:
     """
-    Сбрасывает настройки пользователя в таблице users:
-    range_start, range_end, time_limit, attempts устанавливаются в NULL,
-    а fsm_state устанавливается в 'out_game'.
+    Сбрасывает настройки пользователя в таблице users.
+
+    :param user_id: Идентификатор пользователя.
     """
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
@@ -98,6 +105,13 @@ async def save_game_data(
 ) -> None:
     """
     Сохраняет или обновляет данные игры в таблице games.
+
+    :param game_id: Идентификатор игры.
+    :param user_id: Идентификатор пользователя.
+    :param target_number: Загаданное число.
+    :param attempts_left: Оставшиеся попытки.
+    :param start_time: Время начала игры.
+    :param results: Результат игры.
     """
     async with aiosqlite.connect('game.db') as conn:
         try:
@@ -141,7 +155,10 @@ async def save_game_data(
 
 async def load_user_settings(user_id: int) -> Optional[tuple]:
     """
-    Загружает настройки пользователя из таблицы users по user_id.
+    Загружает настройки пользователя из таблицы users.
+
+    :param user_id: Идентификатор пользователя.
+    :return: Кортеж с настройками пользователя или None.
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
@@ -155,8 +172,10 @@ async def load_user_settings(user_id: int) -> Optional[tuple]:
 
 async def user_settings_to_dict(user_id: int) -> Optional[dict]:
     """
-    Преобразует настройки пользователя из кортежа в словарь с ключами:
-    range_start, range_end, time_limit, attempts, fsm_state.
+    Преобразует настройки пользователя в словарь.
+
+    :param user_id: Идентификатор пользователя.
+    :return: Словарь с настройками пользователя или None.
     """
     settings = await load_user_settings(user_id)
     if settings:
@@ -168,7 +187,10 @@ async def user_settings_to_dict(user_id: int) -> Optional[dict]:
 
 async def get_max_game_id(user_id: int) -> Optional[int]:
     """
-    Возвращает максимальный game_id для указанного user_id из таблицы games.
+    Возвращает максимальный game_id для указанного пользователя.
+
+    :param user_id: Идентификатор пользователя.
+    :return: Максимальный game_id или None.
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
@@ -182,7 +204,10 @@ async def get_max_game_id(user_id: int) -> Optional[int]:
 
 async def save_user_state(user_id: int, state: str) -> None:
     """
-    Обновляет состояние пользователя (fsm_state) в таблице users.
+    Обновляет состояние пользователя в таблице users.
+
+    :param user_id: Идентификатор пользователя.
+    :param state: Новое состояние.
     """
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
@@ -195,7 +220,9 @@ async def save_user_state(user_id: int, state: str) -> None:
 
 async def increment_games_lost(user_id: int) -> None:
     """
-    Увеличивает на 1 значение поля games_lost для указанного user_id в таблице users.
+    Увеличивает количество проигранных игр для пользователя.
+
+    :param user_id: Идентификатор пользователя.
     """
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
@@ -208,7 +235,9 @@ async def increment_games_lost(user_id: int) -> None:
 
 async def increment_games_won(user_id: int) -> None:
     """
-    Увеличивает на 1 значение поля games_lost для указанного user_id в таблице users.
+    Увеличивает количество выигранных игр для пользователя.
+
+    :param user_id: Идентификатор пользователя.
     """
     async with aiosqlite.connect('game.db') as conn:
         await conn.execute('''
@@ -221,8 +250,10 @@ async def increment_games_won(user_id: int) -> None:
 
 async def set_attempts_left(user_id: int) -> Optional[int]:
     """
-    Устанавливает значение attempts_left в таблице games равным attempts из таблицы users,
-    если fsm_state равно 'game'.
+    Устанавливает количество оставшихся попыток для текущей игры пользователя.
+
+    :param user_id: Идентификатор пользователя.
+    :return: Количество оставшихся попыток или None.
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
@@ -253,8 +284,10 @@ async def set_attempts_left(user_id: int) -> Optional[int]:
 
 async def decrement_attempts_left(user_id: int) -> Optional[int]:
     """
-    Уменьшает на 1 значение attempts_left в таблице games для текущей игры пользователя
-    и возвращает обновленное значение.
+    Уменьшает количество оставшихся попыток для текущей игры пользователя.
+
+    :param user_id: Идентификатор пользователя.
+    :return: Обновленное количество оставшихся попыток или None.
     """
     async with aiosqlite.connect('game.db') as conn:
         max_game_id = await get_max_game_id(user_id)
@@ -279,8 +312,10 @@ async def decrement_attempts_left(user_id: int) -> Optional[int]:
 
 async def get_time_since_game_start(user_id: int) -> Optional[int]:
     """
-    Возвращает количество секунд между текущим временем и временем start_time
-    для текущей игры пользователя.
+    Возвращает количество секунд с начала текущей игры пользователя.
+
+    :param user_id: Идентификатор пользователя.
+    :return: Количество секунд или None.
     """
     async with aiosqlite.connect('game.db') as conn:
         max_game_id = await get_max_game_id(user_id)
@@ -307,8 +342,9 @@ async def get_time_since_game_start(user_id: int) -> Optional[int]:
 
 async def count_and_update_unfinished_games(user_id: int) -> None:
     """
-    Считает количество игр с пустым значением в поле results для указанного user_id
-    и обновляет поле games_unfinished в таблице users.
+    Считает незавершенные игры пользователя и обновляет соответствующее поле в таблице users.
+
+    :param user_id: Идентификатор пользователя.
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''

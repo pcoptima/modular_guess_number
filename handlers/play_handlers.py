@@ -15,7 +15,12 @@ import asyncio  # Добавлено для работы с таймером
 async def check_missing_settings(data: Dict[str, Any]) -> List[str]:
     """
     Проверяет, какие настройки отсутствуют в данных состояния.
-    Возвращает список отсутствующих настроек.
+
+    Аргументы:
+        data (Dict[str, Any]): Данные состояния пользователя.
+
+    Возвращает:
+        List[str]: Список отсутствующих настроек.
     """
     missing_settings = []
     if data['range_start'] is None or data['range_end'] is None:
@@ -29,14 +34,18 @@ async def check_missing_settings(data: Dict[str, Any]) -> List[str]:
 
 async def start_game_timer(state: FSMContext, user_id: int, data: Dict[str, Any], callback_query: types.CallbackQuery) -> None:
     """
-    Запускает таймер игры. Если время истекает, завершает игру,
-    обновляет состояние пользователя и сохраняет результат как проигрыш.
+    Запускает таймер игры. Если время истекает, завершает игру.
+
+    Аргументы:
+        state (FSMContext): Контекст состояния FSM.
+        user_id (int): ID пользователя.
+        data (Dict[str, Any]): Данные состояния пользователя.
+        callback_query (types.CallbackQuery): Объект callback-запроса.
     """
     async def game_timer():
         await asyncio.sleep(data['time_limit'])
         current_state = await state.get_state()
         if current_state == GameStates.game:
-            # await _game_lost(user_id)
             await _game_lost(user_id, state)
             await callback_query.message.answer(
                 LEXICON["game_lost_time"].format(
@@ -45,7 +54,14 @@ async def start_game_timer(state: FSMContext, user_id: int, data: Dict[str, Any]
     asyncio.create_task(game_timer())
 
 
-async def _game_lost(user_id: int, state: FSMContext):
+async def _game_lost(user_id: int, state: FSMContext) -> None:
+    """
+    Обрабатывает проигрыш пользователя.
+
+    Аргументы:
+        user_id (int): ID пользователя.
+        state (FSMContext): Контекст состояния FSM.
+    """
     game_id = await get_max_game_id(user_id)
     await save_game_data(game_id=game_id, user_id=user_id, results="lost")
     await state.set_state(GameStates.out_game)
@@ -53,7 +69,14 @@ async def _game_lost(user_id: int, state: FSMContext):
     await increment_games_lost(user_id)
 
 
-async def _game_won(user_id: int, state: FSMContext):
+async def _game_won(user_id: int, state: FSMContext) -> None:
+    """
+    Обрабатывает победу пользователя.
+
+    Аргументы:
+        user_id (int): ID пользователя.
+        state (FSMContext): Контекст состояния FSM.
+    """
     game_id = await get_max_game_id(user_id)
     await save_game_data(game_id=game_id, user_id=user_id, results="won")
     await state.set_state(GameStates.out_game)
@@ -65,6 +88,11 @@ async def initialize_game(callback_query: types.CallbackQuery, state: FSMContext
     """
     Инициализирует игру: устанавливает состояние, сохраняет целевое число,
     запускает таймер и отправляет сообщение с приглашением к игре.
+
+    Аргументы:
+        callback_query (types.CallbackQuery): Объект callback-запроса.
+        state (FSMContext): Контекст состояния FSM.
+        data (Dict[str, Any]): Данные состояния пользователя.
     """
     user_id = callback_query.from_user.id
     await state.set_state(GameStates.game)
@@ -89,7 +117,10 @@ async def initialize_game(callback_query: types.CallbackQuery, state: FSMContext
 async def process_play(callback_query: types.CallbackQuery, state: FSMContext) -> None:
     """
     Основной метод для обработки команды начала игры.
-    Проверяет настройки и запускает игру, если все настройки указаны.
+
+    Аргументы:
+        callback_query (types.CallbackQuery): Объект callback-запроса.
+        state (FSMContext): Контекст состояния FSM.
     """
     user_id = callback_query.from_user.id
     user_settings = await user_settings_to_dict(user_id)
@@ -107,7 +138,14 @@ async def process_play(callback_query: types.CallbackQuery, state: FSMContext) -
         await initialize_game(callback_query, state, data)
 
 
-async def main_process_play(message: types.Message, state: FSMContext):
+async def main_process_play(message: types.Message, state: FSMContext) -> None:
+    """
+    Обрабатывает ввод пользователя во время игры.
+
+    Аргументы:
+        message (types.Message): Сообщение пользователя.
+        state (FSMContext): Контекст состояния FSM.
+    """
     user_id = message.from_user.id
     user_number = int(message.text)
     data = await state.get_data()
