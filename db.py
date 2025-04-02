@@ -145,7 +145,7 @@ async def load_user_settings(user_id: int) -> Optional[tuple]:
     """
     async with aiosqlite.connect('game.db') as conn:
         cursor = await conn.execute('''
-            SELECT range_start, range_end, time_limit, attempts, fsm_state
+            SELECT range_start, range_end, time_limit, attempts, fsm_state, games_won, games_lost, games_unfinished
             FROM users
             WHERE user_id = ?
         ''', (user_id,))
@@ -201,6 +201,19 @@ async def increment_games_lost(user_id: int) -> None:
         await conn.execute('''
             UPDATE users
             SET games_lost = games_lost + 1
+            WHERE user_id = ?
+        ''', (user_id,))
+        await conn.commit()
+
+
+async def increment_games_won(user_id: int) -> None:
+    """
+    Увеличивает на 1 значение поля games_lost для указанного user_id в таблице users.
+    """
+    async with aiosqlite.connect('game.db') as conn:
+        await conn.execute('''
+            UPDATE users
+            SET games_won = games_won + 1
             WHERE user_id = ?
         ''', (user_id,))
         await conn.commit()
@@ -290,3 +303,25 @@ async def get_time_since_game_start(user_id: int) -> Optional[int]:
                 except ValueError:
                     print("Неверный формат времени в поле start_time.")
     return None
+
+
+async def count_and_update_unfinished_games(user_id: int) -> None:
+    """
+    Считает количество игр с пустым значением в поле results для указанного user_id
+    и обновляет поле games_unfinished в таблице users.
+    """
+    async with aiosqlite.connect('game.db') as conn:
+        cursor = await conn.execute('''
+            SELECT COUNT(*)
+            FROM games
+            WHERE user_id = ? AND (results IS NULL OR results = '')
+        ''', (user_id,))
+        unfinished_games_count = await cursor.fetchone()
+
+        if unfinished_games_count:
+            await conn.execute('''
+                UPDATE users
+                SET games_unfinished = ?
+                WHERE user_id = ?
+            ''', (unfinished_games_count[0], user_id))
+            await conn.commit()

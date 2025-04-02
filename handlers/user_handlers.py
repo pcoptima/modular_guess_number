@@ -4,7 +4,7 @@ from lexicon import LEXICON
 from states import GameStates
 from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
                        settings_menu_keyboard, main_menu_keyboard)
-from db import save_user_settings, load_user_settings, save_user_state, reset_settings
+from db import save_user_settings, load_user_settings, save_user_state, reset_settings, count_and_update_unfinished_games
 
 
 async def send_welcome(message: types.Message):
@@ -20,6 +20,21 @@ async def process_rules(callback_query: types.CallbackQuery):
     await callback_query.answer()
 
 
+async def get_stats(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    await count_and_update_unfinished_games(user_id)
+    all_data_user = await load_user_settings(user_id)
+    games_won = all_data_user[5]
+    games_lost = all_data_user[6]
+    not_finished = all_data_user[7]
+    await callback_query.message.answer(LEXICON["statistics"].format(
+        games_won=games_won,
+        games_lost=games_lost,
+        not_finished=not_finished
+    ), reply_markup=main_menu_keyboard())
+    await callback_query.answer()
+
+
 async def process_settings(callback_query: types.CallbackQuery):
     await callback_query.message.answer(LEXICON["settings"], reply_markup=settings_menu_keyboard())
     await callback_query.answer()
@@ -28,7 +43,7 @@ async def process_settings(callback_query: types.CallbackQuery):
 async def load_settings_from_db(user_id: int, state: FSMContext):
     settings = await load_user_settings(user_id)
     if settings:
-        range_start, range_end, time_limit, attempts, _ = settings
+        range_start, range_end, time_limit, attempts, _, _, _, _ = settings
         await state.update_data(
             range_start=range_start,
             range_end=range_end,

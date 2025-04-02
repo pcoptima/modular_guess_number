@@ -29,5 +29,6 @@ LEXICON = {
     "my_number_is_higher": "Мое число больше. Осталось попыток — {attempts_left}. Введите число.",
     "my_number_is_less": "Мое число меньше. Осталось попыток — {attempts_left}. Введите число.",
     "won_game": "Вы победили! Прошло: секунд - {seconds_passed}  и попыток - {attempts_left} ",
-    "game_lost_attempts": "Вы проиграли. Попытки закончились."
+    "game_lost_attempts": "Вы проиграли. Попытки закончились.",
+    "statistics": "Выиграно игр — {games_won}, проиграно — {games_lost}, не закончено — {not_finished}"
 }
