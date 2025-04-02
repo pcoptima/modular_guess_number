@@ -8,10 +8,12 @@ from dotenv import load_dotenv
 import os
 from db import init_db
 from aiogram import Router, F
-from handlers.user_handlers import (send_welcome, process_help, process_rules, process_settings,
-                                    process_set_range, set_range, process_set_time,
-                                    process_set_attempts, set_attempts, set_time, get_stats,
-                                    process_my_settings, process_interrupt, handle_out_of_game_message)
+from handlers.callback_query_user_handlers import (process_rules, process_settings,
+                                                   process_set_range, process_set_time,
+                                                   process_set_attempts, get_stats,
+                                                   process_my_settings, process_interrupt)
+from handlers.message_user_handlers import (send_welcome, process_help, set_range,
+                                            set_time, set_attempts, handle_out_of_game_message)
 from handlers.play_handlers import process_play, main_process_play
 
 load_dotenv()

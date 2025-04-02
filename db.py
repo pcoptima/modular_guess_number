@@ -1,7 +1,5 @@
 from typing import Optional, Union
-from databases import Database
 import aiosqlite
-import asyncio
 from datetime import datetime
 
 
