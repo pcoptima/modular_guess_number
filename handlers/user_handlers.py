@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from lexicon import LEXICON
 from states import GameStates
 from keyboards import (start_menu_keyboard, my_settings_menu_keyboard,
-                       settings_menu_keyboard, main_menu_keyboard)
+                       settings_menu_keyboard, main_menu_keyboard, game_setting_keyboard)
 from db import save_user_settings, load_user_settings, save_user_state, reset_settings, count_and_update_unfinished_games
 
 
@@ -12,11 +12,11 @@ async def send_welcome(message: types.Message):
 
 
 async def process_help(message: types.Message):
-    await message.answer(LEXICON["rules"])
+    await message.answer(LEXICON["rules"], reply_markup=game_setting_keyboard())
 
 
 async def process_rules(callback_query: types.CallbackQuery):
-    await callback_query.message.answer(LEXICON["rules"], reply_markup=main_menu_keyboard())
+    await callback_query.message.answer(LEXICON["rules"], reply_markup=game_setting_keyboard())
     await callback_query.answer()
 
 

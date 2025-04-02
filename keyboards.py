@@ -12,6 +12,17 @@ def start_menu_keyboard():
     return keyboard
 
 
+def game_setting_keyboard():
+    kb = [
+        [
+            types.InlineKeyboardButton(
+                text="Настройка игры", callback_data="settings")
+        ]
+    ]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    return keyboard
+
+
 def settings_menu_keyboard():
     kb = [
         [
