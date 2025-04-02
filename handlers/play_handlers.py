@@ -35,16 +35,21 @@ async def start_game_timer(state: FSMContext, user_id: int, data: Dict[str, Any]
         await asyncio.sleep(data['time_limit'])
         current_state = await state.get_state()
         if current_state == GameStates.game:
-            game_id = await get_max_game_id(user_id)
-            await save_game_data(game_id=game_id, user_id=user_id, results="lost")
-            await state.set_state(GameStates.out_game)
-            await save_user_state(user_id, "out_game")
-            await increment_games_lost(user_id)
+            # await _game_lost(user_id)
+            await _game_lost(user_id, state)
             await callback_query.message.answer(
                 LEXICON["game_lost_time"].format(
                     time_limit=data['time_limit'])
             )
     asyncio.create_task(game_timer())
+
+
+async def _game_lost(user_id: int, state: FSMContext):
+    game_id = await get_max_game_id(user_id)
+    await save_game_data(game_id=game_id, user_id=user_id, results="lost")
+    await state.set_state(GameStates.out_game)
+    await save_user_state(user_id, "out_game")
+    await increment_games_lost(user_id)
 
 
 async def initialize_game(callback_query: types.CallbackQuery, state: FSMContext, data: Dict[str, Any]) -> None:
@@ -100,8 +105,7 @@ async def main_process_play(message: types.Message, state: FSMContext):
     target_number = data.get('target_number')
     attempts_left = await decrement_attempts_left(user_id)
     if attempts_left == 0:
-        await state.set_state(GameStates.out_game)
-        await save_user_state(user_id, "out_game")
+        await _game_lost(user_id, state)
         await message.answer(LEXICON["game_lost_attempts"], reply_markup=main_menu_keyboard())
         return
     if user_number < target_number:
