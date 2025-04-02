@@ -7,7 +7,7 @@ from states import GameStates
 from keyboards import in_game_menu_keyboard, settings_menu_keyboard, main_menu_keyboard
 from db import (save_game_data, save_user_state, increment_games_lost,
                 get_max_game_id, set_attempts_left, user_settings_to_dict,
-                decrement_attempts_left, get_time_since_game_start)
+                decrement_attempts_left, get_time_since_game_start, load_user_settings)
 import asyncio  # Добавлено для работы с таймером
 
 
@@ -98,22 +98,27 @@ async def main_process_play(message: types.Message, state: FSMContext):
     user_number = int(message.text)
     data = await state.get_data()
     target_number = data.get('target_number')
+    attempts_left = await decrement_attempts_left(user_id)
+    if attempts_left == 0:
+        await state.set_state(GameStates.out_game)
+        await save_user_state(user_id, "out_game")
+        await message.answer(LEXICON["game_lost_attempts"], reply_markup=main_menu_keyboard())
+        return
     if user_number < target_number:
-        attempts_left = await decrement_attempts_left(user_id)
-        if attempts_left:
-            await message.answer(LEXICON["my_number_is_higher"].format(
-                attempts_left=attempts_left
-            ), reply_markup=in_game_menu_keyboard())
-        else:
-            await state.set_state(GameStates.out_game)
-            await save_user_state(user_id, "out_game")
-            await message.answer(LEXICON["game_lost_attempts"], reply_markup=main_menu_keyboard())
+        await message.answer(LEXICON["my_number_is_higher"].format(
+            attempts_left=attempts_left
+        ), reply_markup=in_game_menu_keyboard())
     elif user_number == target_number:
-        attempts_left = await decrement_attempts_left(user_id)
+        all_data_user = await load_user_settings(user_id)
+        attempts = all_data_user[3]
         await state.set_state(GameStates.out_game)
         await save_user_state(user_id, "out_game")
         seconds_passed = await get_time_since_game_start(user_id)
         await message.answer(LEXICON["won_game"].format(
-            attempts_left=attempts_left + 1,
+            attempts_left=attempts - attempts_left,
             seconds_passed=seconds_passed
         ), reply_markup=main_menu_keyboard())
+    else:
+        await message.answer(LEXICON["my_number_is_less"].format(
+            attempts_left=attempts_left
+        ), reply_markup=in_game_menu_keyboard())
