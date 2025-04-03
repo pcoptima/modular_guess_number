@@ -15,9 +15,9 @@ async def init_db() -> None:
                 range_end INTEGER,
                 time_limit INTEGER,
                 attempts INTEGER,
-                games_won INTEGER,
-                games_lost INTEGER,
-                games_unfinished INTEGER,
+                games_won INTEGER DEFAULT 0,
+                games_lost INTEGER DEFAULT 0,
+                games_unfinished INTEGER DEFAULT 0,
                 fsm_state TEXT
             )
         ''')
