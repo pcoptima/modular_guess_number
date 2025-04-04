@@ -1,3 +1,4 @@
+import html
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from lexicon import LEXICON
@@ -10,7 +11,10 @@ async def send_welcome(message: types.Message) -> None:
     """
     Отправляет приветственное сообщение пользователю.
     """
-    await message.answer(LEXICON["welcome"], reply_markup=start_menu_keyboard())
+    user = html.escape(message.from_user.full_name)
+    await message.answer(LEXICON["welcome"].format(
+        user=user
+    ), reply_markup=start_menu_keyboard())
 
 
 async def process_help(message: types.Message) -> None:
